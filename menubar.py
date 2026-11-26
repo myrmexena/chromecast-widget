@@ -3,6 +3,8 @@ import threading
 
 import pychromecast
 import rumps
+import zeroconf
+from pychromecast.discovery import CastBrowser, SimpleCastListener
 
 
 class CastWidget(rumps.App):
@@ -11,6 +13,7 @@ class CastWidget(rumps.App):
         self.casts = {}
         self.current = None  # friendly name
         self.now = rumps.MenuItem("Recherche des Chromecast…")
+        self.infos = {}
         self.sub = rumps.MenuItem("")
         self.pos = rumps.MenuItem("")
         self.back = rumps.MenuItem("⏪ Reculer de 30 s", callback=lambda _: self.act("seek", -30))
@@ -26,13 +29,41 @@ class CastWidget(rumps.App):
         threading.Thread(target=self.discover, daemon=True).start()
 
     def discover(self):
-        found, browser = pychromecast.get_chromecasts()
-        self._browser = browser  # garde la découverte vivante
-        self.casts = {c.cast_info.friendly_name: c for c in found}
-        for name in sorted(self.casts):
-            self.devices.add(rumps.MenuItem(name, callback=self.select))
-        if self.casts:
-            self.current = sorted(self.casts)[0]
+        """Découverte continue : met à jour self.infos quand un appareil apparaît/disparaît."""
+        self.zc = zeroconf.Zeroconf()
+        self.infos = {}  # uuid -> CastInfo
+
+        def sync(uuid, _service=None):
+            info = self._browser.devices.get(uuid)
+            if info:
+                self.infos[uuid] = info
+
+        def remove(uuid, _service, _info):
+            self.infos.pop(uuid, None)
+            for name in [n for n, c in self.casts.items() if c.uuid == uuid]:
+                self.casts.pop(name).disconnect()
+
+        self._browser = CastBrowser(SimpleCastListener(sync, remove, sync), self.zc)
+        self._browser.start_discovery()
+
+    def sync_devices(self):
+        """Appelé depuis le thread principal : reflète les appareils et l'icône."""
+        for uuid, info in list(self.infos.items()):
+            if info.friendly_name not in self.casts:
+                self.casts[info.friendly_name] = pychromecast.get_chromecast_from_cast_info(info, self.zc)
+        names = sorted(self.casts)
+        if names != getattr(self, "_names", None):
+            self._names = names
+            if self.devices._menu is not None:
+                self.devices.clear()
+            for name in names:
+                self.devices.add(rumps.MenuItem(name, callback=self.select))
+            if self.current not in self.casts:
+                self.current = names[0] if names else None
+        # icône visible seulement si au moins un Chromecast est sur le réseau
+        item = self._nsapp.nsstatusitem
+        if hasattr(item, "setVisible_"):
+            item.setVisible_(bool(names))
 
     def select(self, item):
         self.current = item.title
@@ -62,6 +93,7 @@ class CastWidget(rumps.App):
 
     @rumps.timer(3)
     def refresh(self, _):
+        self.sync_devices()
         if not self.casts:
             return
         try:
