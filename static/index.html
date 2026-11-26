@@ -81,12 +81,16 @@ async function api(path, opts) {
 async function loadDevices() {
   try {
     const list = await api("/api/devices");
-    $("device").innerHTML = list.map(n => `<option>${n}</option>`).join("");
-    $("err").textContent = list.length ? "" : "Aucun Chromecast trouvé";
+    const sel = $("device").value;
+    if (JSON.stringify(list) !== JSON.stringify([...$("device").options].map(o => o.value))) {
+      $("device").innerHTML = list.map(n => `<option>${n}</option>`).join("");
+      if (list.includes(sel)) $("device").value = sel;
+    }
+    $("err").textContent = list.length ? "" : "Recherche des Chromecast…";
   } catch (e) { $("err").textContent = e.message; }
 }
 async function refresh() {
-  if (!$("device").value) return;
+  if (!$("device").value) { await loadDevices(); if (!$("device").value) return; }
   try {
     const s = await api(`/api/status?device=${dev()}`);
     $("title").textContent = s.title || s.app || "Rien en cours de diffusion";
