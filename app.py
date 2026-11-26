@@ -5,9 +5,11 @@ from pathlib import Path
 
 import pychromecast
 import webview
+from webview.menu import Menu, MenuAction
 import zeroconf
 from pychromecast.discovery import CastBrowser, SimpleCastListener
 
+import prefs
 import server
 
 ICON = Path(__file__).parent / "assets" / "AppIcon.icns"
@@ -44,13 +46,33 @@ def brand_app():
         pass
 
 
-if __name__ == "__main__":
+def run_window():
     httpd = ThreadingHTTPServer(("127.0.0.1", server.PORT), server.Handler)
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     browser = start_discovery()
-    webview.create_window(
+    win = webview.create_window(
         "Chromecast", f"http://127.0.0.1:{server.PORT}",
         width=380, height=390, resizable=False, on_top=True,
     )
-    webview.start(brand_app)
+    switch = {"go": False}
+
+    def to_menubar():
+        switch["go"] = True
+        prefs.set_mode("menubar")
+        win.destroy()
+
+    menu = [Menu("Affichage", [MenuAction("Passer en mode barre de menus", to_menubar)])]
+    webview.start(brand_app, menu=menu)
     browser.stop_discovery()
+    httpd.shutdown()
+    httpd.server_close()  # libère le port avant la relance
+    if switch["go"]:
+        prefs.relaunch()
+
+
+if __name__ == "__main__":
+    if prefs.get_mode() == "menubar":
+        import menubar
+        menubar.main()
+    else:
+        run_window()

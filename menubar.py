@@ -4,6 +4,8 @@ import threading
 import pychromecast
 import rumps
 import zeroconf
+
+import prefs
 from pychromecast.discovery import CastBrowser, SimpleCastListener
 
 
@@ -24,7 +26,8 @@ class CastWidget(rumps.App):
         self.menu = [
             self.now, self.sub, self.pos, None,
             self.back, self.toggle, self.fwd, self.stop, None,
-            self.devices, rumps.MenuItem("Quitter", callback=rumps.quit_application),
+            self.devices, rumps.MenuItem("Ouvrir la fenêtre", callback=self.to_window),
+            rumps.MenuItem("Quitter", callback=rumps.quit_application),
         ]
         threading.Thread(target=self.discover, daemon=True).start()
 
@@ -64,6 +67,11 @@ class CastWidget(rumps.App):
         item = self._nsapp.nsstatusitem
         if hasattr(item, "setVisible_"):
             item.setVisible_(bool(names))
+
+    def to_window(self, _):
+        prefs.set_mode("window")
+        prefs.relaunch()
+        rumps.quit_application()
 
     def select(self, item):
         self.current = item.title
@@ -122,5 +130,14 @@ def fmt(sec):
     return f"{h}:{m:02d}:{s:02d}" if h else f"{m}:{s:02d}"
 
 
-if __name__ == "__main__":
+def main():
+    try:  # pas d'icône dans le Dock en mode barre de menus
+        from AppKit import NSApplication, NSApplicationActivationPolicyAccessory
+        NSApplication.sharedApplication().setActivationPolicy_(NSApplicationActivationPolicyAccessory)
+    except Exception:  # noqa: BLE001
+        pass
     CastWidget().run()
+
+
+if __name__ == "__main__":
+    main()

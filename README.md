@@ -16,6 +16,10 @@ Petit widget web local pour piloter un Chromecast depuis l'ordinateur :
 Crée `~/Applications/Chromecast Widget.app` (fenêtre flottante avec l'interface web).
 Lancez-la ensuite via Spotlight (⌘ Espace → « Chromecast Widget »).
 
+Menu **Affichage → Passer en mode barre de menus** pour basculer en icône de barre de menus ;
+**Ouvrir la fenêtre** dans ce menu revient à la fenêtre. Le dernier mode est mémorisé
+(`~/.chromecast-widget.json`).
+
 ## Widget barre de menus macOS
 
 ```bash
