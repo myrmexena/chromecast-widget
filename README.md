@@ -7,7 +7,16 @@ Petit widget web local pour piloter un Chromecast depuis l'ordinateur :
 3. pause / lecture
 4. arrêter la diffusion
 
-## Widget barre de menus macOS (recommandé)
+## Mini-app macOS (Spotlight)
+
+```bash
+./make_app.sh
+```
+
+Crée `~/Applications/Chromecast Widget.app` (fenêtre flottante avec l'interface web).
+Lancez-la ensuite via Spotlight (⌘ Espace → « Chromecast Widget »).
+
+## Widget barre de menus macOS
 
 ```bash
 python menubar.py
