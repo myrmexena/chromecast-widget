@@ -35,10 +35,11 @@ def status(cast):
         "current": s.adjusted_current_time,
         "duration": s.duration,
         "volume": cast.status.volume_level if cast.status else None,
+        "muted": cast.status.volume_muted if cast.status else None,
     }
 
 
-def act(cast, action, delta=0.0):
+def act(cast, action, delta=0.0, level=None):
     mc = cast.media_controller
     mc.update_status()
     if action == "toggle":
@@ -50,6 +51,10 @@ def act(cast, action, delta=0.0):
         mc.seek(target)
     elif action == "stop":
         cast.quit_app()
+    elif action == "volume":
+        cast.set_volume(min(1.0, max(0.0, level)))
+    elif action == "mute":
+        cast.set_volume_muted(not cast.status.volume_muted)
     else:
         raise ValueError(f"Action inconnue: {action}")
 
@@ -73,7 +78,8 @@ class Handler(BaseHTTPRequestHandler):
             if url.path == "/api/status" and method == "GET":
                 return self._json(status(cast))
             if url.path == "/api/action" and method == "POST":
-                act(cast, q["action"], float(q.get("delta", 0)))
+                act(cast, q["action"], float(q.get("delta", 0)),
+                    float(q["level"]) if "level" in q else None)
                 return self._json({"ok": True})
             self._json({"error": "not found"}, 404)
         except LookupError as e:

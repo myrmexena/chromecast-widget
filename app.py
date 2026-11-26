@@ -50,7 +50,7 @@ if __name__ == "__main__":
     browser = start_discovery()
     webview.create_window(
         "Chromecast", f"http://127.0.0.1:{server.PORT}",
-        width=380, height=330, resizable=False, on_top=True,
+        width=380, height=390, resizable=False, on_top=True,
     )
     webview.start(brand_app)
     browser.stop_discovery()
