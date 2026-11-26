@@ -7,7 +7,17 @@ Petit widget web local pour piloter un Chromecast depuis l'ordinateur :
 3. pause / lecture
 4. arrêter la diffusion
 
-## Lancer
+## Widget barre de menus macOS (recommandé)
+
+```bash
+python menubar.py
+```
+
+Une icône 📺 apparaît dans la barre de menus (▶️ / ⏸ selon l'état) : titre en cours,
+position, ⏪ 30 s, pause/lecture, ⏩ 30 s, arrêt, choix de l'appareil.
+
+## Version page web
+
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate

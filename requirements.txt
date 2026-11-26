@@ -1,1 +1,2 @@
 PyChromecast>=14
+rumps>=0.4
